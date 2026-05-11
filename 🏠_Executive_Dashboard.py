@@ -34,32 +34,62 @@ prospects = data["prospects"]
 progress = data["progress"]
 users = data["users"]
 
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+logo_base64 = get_base64_image("qonex_logo.png")  # ganti sesuai nama file logo kamu
+
 # ─── Sidebar ─────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("""
-    <div style="text-align:center; padding: 20px 0 10px 0;">
-        <div style="font-size: 28px; font-weight: 800; letter-spacing: -1px;
-                    font-family: 'DM Sans', sans-serif; color: white;">
-            🚗 DSS Motor
+
+    st.markdown(f"""
+    <div style="padding: 20px 0 10px 0;">
+        <div style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        ">
+            <img src="data:image/png;base64,{logo_base64}" 
+                 style="width: 42px; height: 42px; object-fit: contain;">
+            
+            <div style="text-align: left;">
+                <div style="
+                    font-size: 28px;
+                    font-weight: 800;
+                    letter-spacing: -1px;
+                    font-family: 'DM Sans', sans-serif;
+                    color: white;
+                    line-height: 1.1;
+                ">
+                    Qonex City
+                </div>
+
+                <div style="
+                    font-size: 12px;
+                    color: rgba(255,255,255,0.5);
+                    margin-top: 4px;
+                ">
+                    Lead Management System
+                </div>
+            </div>
         </div>
-        <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px;">
-            Lead Management System
-        </div>
+
+        <hr style="border-color: rgba(255,255,255,0.1); margin: 16px 0 20px 0;">
     </div>
-    <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 0 20px 0;">
     """, unsafe_allow_html=True)
 
     time_filter = st.selectbox(
         "📅 PERIODE",
         ["Minggu Ini", "Minggu Lalu", "Bulan Ini", "Bulan Lalu", "Tahun Ini", "Lifetime"],
-        index=4  # Default: Tahun Ini
+        index=4
     )
 
     start_date, end_date = get_date_range(time_filter)
     prev_start, prev_end = get_previous_period(start_date, end_date)
 
     st.caption(f"📆 {start_date.strftime('%d %b %Y')} — {end_date.strftime('%d %b %Y')}")
-
     st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
 
     # Sales filter
@@ -67,6 +97,7 @@ with st.sidebar:
     selected_sales = st.multiselect("👤 FILTER SALES", all_sales, default=[])
 
     st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
+
     st.markdown(f"""
     <div style="font-size: 11px; color: rgba(255,255,255,0.4); text-align: center; padding-top: 10px;">
         Data Snapshot: 10 Apr 2026<br>
@@ -90,7 +121,7 @@ if selected_sales:
 st.markdown(f"""
 <div class="dashboard-header">
     <h1>Executive Lead Management System</h1>
-    <p>DSS Motor — {time_filter} &nbsp;|&nbsp; Last updated: 10 Apr 2026, 09:25 AM</p>
+    <p>Qonex City — {time_filter} &nbsp;|&nbsp; Last updated: 10 Apr 2026, 09:25 AM</p>
 </div>
 """, unsafe_allow_html=True)
 
