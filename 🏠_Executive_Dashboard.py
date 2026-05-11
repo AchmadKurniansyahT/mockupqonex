@@ -5,7 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
-import sys, os
+import sys, os, base64
 
 sys.path.insert(0, os.path.dirname(__file__))
 from utils import (
@@ -34,13 +34,29 @@ prospects = data["prospects"]
 progress = data["progress"]
 users = data["users"]
 
+# ─── Load Logo ───────────────────────────────────────────────────────
+def get_logo_b64():
+    logo_path = os.path.join(os.path.dirname(__file__), "qonex_logo.png")
+    try:
+        with open(logo_path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    except FileNotFoundError:
+        return None
+
+logo_b64 = get_logo_b64()
+
 # ─── Sidebar ─────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("""
+    logo_img = f'<img src="data:image/png;base64,{logo_b64}" style="height:36px; width:auto; object-fit:contain; filter: brightness(0) invert(1);">' if logo_b64 else ""
+
+    st.markdown(f"""
     <div style="text-align:center; padding: 20px 0 10px 0;">
-        <div style="font-size: 28px; font-weight: 800; letter-spacing: -1px;
-                    font-family: 'DM Sans', sans-serif; color: white;">
-            Qonex City
+        <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
+            {logo_img}
+            <div style="font-size: 28px; font-weight: 800; letter-spacing: -1px;
+                        font-family: 'DM Sans', sans-serif; color: white;">
+                Qonex City
+            </div>
         </div>
         <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px;">
             Lead Management System
@@ -245,13 +261,11 @@ with col_funnel:
     st.markdown(render_section("Lead Funnel", "🔽"), unsafe_allow_html=True)
 
     # Calculate funnel counts based on progress data
-    # A lead passes through stages, so we count all progress entries
     funnel_data = []
     for status in FUNNEL_STAGES:
         if status == "leads":
-            count = total_leads  # All leads start as leads
+            count = total_leads
         else:
-            # Count prospects that have ever reached this status
             prospect_ids_at_status = prog[prog["status"] == status]["prospect_id"].nunique()
             count = prospect_ids_at_status
         funnel_data.append({"stage": STATUS_LABELS.get(status, status), "count": count})
@@ -357,7 +371,6 @@ with col_source:
         st.plotly_chart(fig_pie, use_container_width=True, key="pie_source")
 
     with tbl_col:
-        # Render as styled HTML table
         rows_html = ""
         for _, r in top_sources.iterrows():
             rows_html += f"""
@@ -536,17 +549,15 @@ with col_hot:
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.markdown(render_section("Hot Leads by Sales", "🔥"), unsafe_allow_html=True)
 
-    # Hot leads per sales (MR with total hot leads)
+    # Hot leads per sales
     hot_by_sales = df[df["progress_status"] == "hot_leads"].groupby("sales_name")["id"].count().reset_index()
     hot_by_sales.columns = ["sales_name", "hot_count"]
     hot_by_sales = hot_by_sales.sort_values("hot_count", ascending=False)
 
-    # Also get prospect names for hot leads
     hot_prospects = df[df["progress_status"] == "hot_leads"].copy()
 
     if len(hot_by_sales) > 0:
         for _, r in hot_by_sales.head(8).iterrows():
-            # Calculate a "score" — total_progress as proxy
             sales_hot = hot_prospects[hot_prospects["sales_name"] == r["sales_name"]]
             avg_prog = sales_hot["total_progress"].mean() if "total_progress" in sales_hot.columns else 0
 
@@ -569,7 +580,7 @@ with col_trend:
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.markdown(render_section("Daily Lead Trend", "📈"), unsafe_allow_html=True)
 
-    # Daily lead trend — last 14 days of the period
+    # Daily lead trend — last 30 days of the period
     daily = df.groupby("created_date")["id"].count().reset_index()
     daily.columns = ["date", "leads"]
     daily = daily.sort_values("date").tail(30)
@@ -623,9 +634,7 @@ with col_age:
     active_leads = df[df["progress_status"].isin(["leads", "cold_leads", "hot_leads", "deal"])].copy()
 
     if len(active_leads) > 0:
-        # Calculate age from last followup (updated_at) to snapshot date
         snapshot = datetime(2026, 4, 10)
-        # Use the last progress entry per prospect for last followup
         last_prog = progress.groupby("prospect_id")["created_at"].max().reset_index()
         last_prog.columns = ["id", "last_followup"]
 
